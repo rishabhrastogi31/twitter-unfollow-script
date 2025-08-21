@@ -46,3 +46,50 @@
     await sleep(DELAY_MS);
   }
 })();
+
+
+twitter auto scroll script [ it will stop on pressing enter]
+(() => {
+  // Clean up any previous run
+  if (window.__xAutoScrollStop) {
+    window.__xAutoScrollStop();
+  }
+
+  const SCROLL_SPEED_PX_PER_MS = 5; // ~5000 px/sec. Increase for faster.
+  let running = true;
+  let last = performance.now();
+
+  const isEditable = el =>
+    !el ? false :
+    el.isContentEditable ||
+    ['INPUT','TEXTAREA','SELECT'].includes(el.tagName);
+
+  const onKeyDown = (e) => {
+    // Stop on Enter or Escape, but ignore if you're typing in an input/textarea/composer
+    if ((e.key === 'Enter' || e.key === 'Escape') && !isEditable(e.target)) {
+      running = false;
+      cleanup();
+      console.log('[AutoScroll] Stopped.');
+    }
+  };
+
+  const step = (ts) => {
+    if (!running) return;
+    const dt = ts - last;
+    last = ts;
+    window.scrollBy(0, dt * SCROLL_SPEED_PX_PER_MS);
+    requestAnimationFrame(step);
+  };
+
+  const cleanup = () => {
+    document.removeEventListener('keydown', onKeyDown, true);
+    delete window.__xAutoScrollStop;
+  };
+
+  document.addEventListener('keydown', onKeyDown, true);
+  window.__xAutoScrollStop = () => { running = false; cleanup(); };
+
+  console.log('[AutoScroll] Running… Press Enter or Esc (not while typing) to stop.');
+  requestAnimationFrame(step);
+})();
+
